@@ -42,5 +42,8 @@
     <Image Include="lab1.ico">
       <Filter>Файлы ресурсов</Filter>
     </Image>
+    <Image Include="bitmap1.bmp">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
   </ItemGroup>
 </Project>
