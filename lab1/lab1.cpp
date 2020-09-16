@@ -1,5 +1,15 @@
-﻿// lab1.cpp : Определяет точку входа для приложения.
-//
+﻿/*
+    Лабораторная работа 1
+    Изучение событийной архитекторы Windows-приложений, механизма обработки сообщений, 
+        механизма перерисовки окна.
+
+    - Разработать программу, позволяющую передвигать с помощью клавиатуры и мыши спрайт 
+        (окрашенный прямоугольник или эллипс) внутри рабочей области окна.
+    - Обеспечить работу колесика мыши. Прокручивание двигает спрайт по вертикали. 
+        С удерживаемой клавишей Shift прокручивание колесика двигает спрайт по горизонтали.
+    - Заменить спрайт на картинку с непрямоугольным контуром.
+    - Придать спрайту движение с отскоком от границ окна.
+*/
 
 #include "framework.h"
 #include "lab1.h"
@@ -12,7 +22,7 @@ WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки за�
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
 
 // Мои переменные:
-const int delta = 5;
+const int delta = 20;
 RECT wndRect;
 HBITMAP hBmp;
 BITMAP bmp;
@@ -32,6 +42,10 @@ void MoveKeyboard(HWND hWnd, figureInfo* smile, WPARAM wParam, LPARAM lParam, in
 
 void MoveMouse(HWND hWnd, figureInfo* smile, WPARAM wParam, LPARAM lParam);
 
+void MoveMouseWheel(HWND hWnd, figureInfo* smile, WPARAM wParam, LPARAM lParam, int delta);
+
+void CorrectSmile(figureInfo* smile, RECT* wndRect, int delta);
+
 // Отправить объявления функций, включенных в этот модуль кода:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -46,7 +60,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: Разместите код здесь.
 
     // Инициализация глобальных строк
     LoadStringW(hInstance, IDS_WINDOW_NAME, szTitle, MAX_LOADSTRING);
@@ -148,14 +161,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         case WM_CREATE:
         {
-            GetClientRect(hWnd, &wndRect);
-
             hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP1));
             GetObject(hBmp, sizeof(bmp), &bmp);
             if (hBmp == NULL)
                 MessageBox(hWnd, L"Невозможно загрузить изображение!", L"Ошибка", MB_OK | MB_ICONERROR);
-          
-            InitSmile(&smile, wndRect.right / 2, wndRect.bottom / 2, 100, 100);
+         
+            GetClientRect(hWnd, &wndRect);
+            InitSmile(&smile, wndRect.right / 2, wndRect.bottom / 2, 0, 0);
         }
         break;
 
@@ -165,14 +177,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hMemDc;
             PAINTSTRUCT ps;
 
-            GetClientRect(hWnd, &wndRect);
             HDC hWndDc = BeginPaint(hWnd, &ps);
             hMemDc = CreateCompatibleDC(hWndDc);
             hPrevBmp = (HBITMAP)SelectObject(hMemDc, hBmp);
+           
             smile.width = bmp.bmWidth;
             smile.height = bmp.bmHeight;
-
-            BitBlt(hWndDc, smile.x - smile.width / 2, smile.y - smile.height / 2, bmp.bmWidth, bmp.bmHeight,
+            GetClientRect(hWnd, &wndRect);
+            CorrectSmile(&smile, &wndRect, delta);
+           
+            BitBlt(hWndDc, smile.x, smile.y, bmp.bmWidth, bmp.bmHeight,
                 hMemDc, 0, 0, SRCAND);
             SelectObject(hMemDc, hBmp);
 
@@ -187,7 +201,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             POINT ptMousePos = { LOWORD(lParam), HIWORD(lParam) };
             isMoving = true;
-            InvalidateRgn(hWnd, NULL, TRUE);
+            InvalidateRect(hWnd, NULL, TRUE);
         }
         break;
 
@@ -212,21 +226,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         case WM_MOUSEWHEEL:
         {
+            MoveMouseWheel(hWnd, &smile, wParam, lParam, delta);
             InvalidateRect(hWnd, NULL, TRUE);
         }
         break;
 
         case WM_DESTROY:
+        {
             DeleteObject(hBmp);
             PostQuitMessage(0);
+        }
+        break;
 
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
 }
 
-
+void CorrectSmile(figureInfo *smile, RECT *wndRect, int delta)
+{
+    delta *= 2;
+    BOOL condition1 = (smile->x + smile->width) >= wndRect->right;
+    BOOL condition2 = smile->x <= 0;
+    BOOL condition3 = (smile->y + smile->height) >= wndRect->bottom;
+    BOOL condition4 = smile->y <= 0;
+    if (condition1)
+        smile->x -= delta;
+    if (condition2)
+        smile->x += delta;
+    if (condition3)
+        smile->y -= delta;
+    if (condition4)
+        smile->y += delta;
+}
 
 void InitSmile(figureInfo *smile, int x, int y, int width, int height)
 {
@@ -267,7 +300,16 @@ void MoveKeyboard(HWND hWnd, figureInfo* smile, WPARAM wParam, LPARAM lParam, in
     }
 }
 
-void MoveMouseWheel()
+void MoveMouseWheel(HWND hWnd, figureInfo* smile, WPARAM wParam, LPARAM lParam, int delta)
 {
-
+    int wheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+    int sign;
+    if (wheelDelta > 0)
+        sign = 1;
+    else
+        sign = -1;
+    if (LOWORD(wParam) != MK_SHIFT)
+        smile->y -= sign * delta;
+    else
+        smile->x -= sign * delta;
 }
