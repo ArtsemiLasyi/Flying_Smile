@@ -186,8 +186,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             GetClientRect(hWnd, &wndRect);
             CorrectSmile(&smile, &wndRect, delta);
            
-            BitBlt(hWndDc, smile.x, smile.y, bmp.bmWidth, bmp.bmHeight,
-                hMemDc, 0, 0, SRCAND);
+            BitBlt(hWndDc, smile.x, smile.y, smile.width, smile.height, hMemDc, 0, 0, SRCAND);
             SelectObject(hMemDc, hBmp);
 
             DeleteDC(hMemDc);
@@ -246,7 +245,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void CorrectSmile(figureInfo *smile, RECT *wndRect, int delta)
 {
-    delta *= 2;
+    delta *= 3;
     BOOL condition1 = (smile->x + smile->width) >= wndRect->right;
     BOOL condition2 = smile->x <= 0;
     BOOL condition3 = (smile->y + smile->height) >= wndRect->bottom;
