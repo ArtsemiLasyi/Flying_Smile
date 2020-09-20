@@ -109,7 +109,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_LAB1));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+2);
+    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_LAB1);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_LAB1));
@@ -268,7 +268,7 @@ void InitSmile(figureInfo *smile, int x, int y, int width, int height)
     smile->width = width;
 }
 
-void MoveMouse(HWND hWnd, figureInfo* smile, WPARAM wParam, LPARAM lParam)
+void MoveMouse(HWND hWnd, figureInfo *smile, WPARAM wParam, LPARAM lParam)
 {
     if (isMoving) {
         smile->x = LOWORD(lParam);
@@ -299,7 +299,7 @@ void MoveKeyboard(HWND hWnd, figureInfo* smile, WPARAM wParam, LPARAM lParam, in
     }
 }
 
-void MoveMouseWheel(HWND hWnd, figureInfo* smile, WPARAM wParam, LPARAM lParam, int delta)
+void MoveMouseWheel(HWND hWnd, figureInfo *smile, WPARAM wParam, LPARAM lParam, int delta)
 {
     int wheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
     int sign;
